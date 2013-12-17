@@ -1,0 +1,5 @@
+gunicorn
+lxml
+requests
+flask
+BeautifulSoup # used for UnicodeDammit
