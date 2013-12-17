@@ -26,17 +26,38 @@ def convert(mode, url):
         if el.tag == 'base' and el.get('href'):
             url_translator.register_base(el.get('href'))
 
+        # remove comments
+        if isinstance(el, lxml.html.HtmlComment):
+            el.getparent().remove(el)
+            continue
+
         # completely remove bad tags
-        if el.tag in ('img', 'link', 'script', 'style'):
+        if el.tag in ('img', 'link', 'script', 'style', 'meta', 'iframe'):
             el.getparent().remove(el)
             continue
 
         # remove bad attributes
-        for attr in ('style',):
-            if attr in el.attrib:
+        for attr, value in el.attrib.iteritems():
+            if attr.startswith('on') or attr in ('style', 'class', 'id'):
                 del el.attrib[attr]
 
-    return lxml.html.tostring(html)
+        # translate input[type=image] to submit
+        if el.tag == 'input' and el.get('type') == 'image':
+            el.attrib['type'] = 'submit'
+            if el.get('src'):
+                del el.attrib['src']
+            if el.get('alt'):
+                el.attrib['value'] = el.get('alt')
+                del el.attrib['alt']
+
+        # TODO: translate <noscript> to regular text
+
+        # translate URL-containing attributes
+        for attr in ('src', 'href'):
+            if attr in el.attrib and el.attrib[attr]:
+                el.attrib[attr] = url_translator(el.attrib[attr])
+
+    return lxml.html.tostring(html, encoding='utf-8')
 
 class URLTranslator (object):
     DOMAIN_RE = re.compile(r'(https?:)(\/\/[^\/]+\/)(.*\/|)([^\/]*)')
