@@ -51,9 +51,12 @@ def convert(mode, url):
             el.getparent().remove(el)
             continue
 
-        # remove bad attributes
+        # remove bad/useless attributes
+        #   bad = causes extra downloads and/or adds bloat
+        #   useless = doesn't do anything useful w/o CSS/JS
+        # note that we don't remove ids since they can be used as URL anchors
         for attr, value in el.attrib.iteritems():
-            if attr.startswith('on') or attr in ('style', 'class', 'id'):
+            if attr.startswith('on') or attr in ('style', 'class'):
                 del el.attrib[attr]
 
         # translate input[type=image] to submit
